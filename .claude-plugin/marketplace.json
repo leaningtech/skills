@@ -1,0 +1,18 @@
+{
+  "name": "leaningtech-skills",
+  "owner": {
+    "name": "Leaning Technologies"
+  },
+  "metadata": {
+    "description": "Agent skills for Leaning Technologies products"
+  },
+  "plugins": [
+    {
+      "name": "cheerpj",
+      "description": "Run Java applications, applets, Java Web Start, Oracle Forms/EBS and libraries in the browser with CheerpJ",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/cheerpj"]
+    }
+  ]
+}

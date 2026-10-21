@@ -1,0 +1,12 @@
+# CheerpJ
+
+> CheerpJ is a WebAssembly Java Virtual Machine for the browser. It runs existing Java applications, applets, Java Web Start (JNLP) apps, Oracle Forms clients and libraries client-side, from unmodified JARs. Supported versions, APIs and limits are in the documentation.
+
+Coding agents: load the CheerpJ skill before working with CheerpJ. It is self-contained and links to the docs for current facts.
+
+## Start here
+
+- [CheerpJ skill](https://cheerpj.com/skills/cheerpj/SKILL.md): how to convert and run Java apps, applets, JNLP, Oracle Forms/EBS and libraries with CheerpJ
+- [Agent guide](https://cheerpj.com/agents.md): how to install the skill
+- [Documentation](https://cheerpj.com/docs/): getting started, guides, API reference
+- [Pricing and licensing](https://cheerpj.com/pricing)
