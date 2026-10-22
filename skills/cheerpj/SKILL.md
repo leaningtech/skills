@@ -7,16 +7,19 @@ description: Run Java in the browser with CheerpJ. Converts java command lines, 
 
 CheerpJ is a Java Virtual Machine built on WebAssembly. It runs unmodified
 bytecode (JARs) client-side in the browser. Nothing is recompiled, nothing runs
-on a server, and nothing is installed on the user's machine.
+on a server, and nothing is installed on the user's machine. AWT and Swing GUIs,
+console apps and applets are fully supported. CheerpJ supports the latest Java
+LTS release; check the docs Overview for the exact versions in each release.
 
 ## Ground rules
 
-- **The docs hold the facts:** https://cheerpj.com/docs/. Supported Java
-  versions, the loader script tag, function names, init options, browser support
-  and limits all change between releases. Read Getting started and the Reference
+- **The docs hold the facts:** https://cheerpj.com/docs/. This skill names the
+  core calls (`cheerpjInit`, `cheerpjRunJar`, `cheerpjRunMain`,
+  `cheerpjRunLibrary`), the main init options and the filesystem mounts. For
+  supported Java versions, the loader script tag, browser support and limits,
+  check the docs for the release in use. Read Getting started and the Reference
   before writing code, copy the loader tag from Getting started, and use only
-  documented options. Invented ones (for example a heap size or a container id)
-  do not exist. If this skill and the docs disagree, the docs win.
+  documented options. If this skill and the docs disagree, the docs win.
 - **Inspect before changing anything.** Say which path you picked and why.
 - **Never propose a rewrite or port** as a precondition. CheerpJ runs the
   existing bytecode.
@@ -37,14 +40,14 @@ Reference.
 
 | Today                                                                                          | In CheerpJ                                                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `java -jar app.jar args`                                                                       | Run-JAR call with the JAR's virtual path and the same args                                                                                                                           |
-| `java -cp a.jar;lib/* com.x.Main args`                                                         | Run-main call: class name, classpath of virtual paths joined with `:` (expand every wildcard into explicit JARs), args                                                               |
-| `-Dkey=value`                                                                                  | System-properties init option                                                                                                                                                        |
+| `java -jar app.jar args`                                                                       | `cheerpjRunJar("/app/app.jar", ...args)`                                                                                                                                             |
+| `java -cp a.jar;lib/* com.x.Main args`                                                         | `cheerpjRunMain("com.x.Main", "/app/a.jar:/app/lib/b.jar", ...args)`. Join classpath entries with `:` and expand every wildcard into explicit JARs                                  |
+| `-Dkey=value`                                                                                  | `cheerpjInit({ javaProperties: ["key=value", …] })`                                                                                                                                  |
 | `-Xmx`, `-Xms`, `-XX:…`, `-server`                                                             | Usually no equivalent. Drop them unless the Reference lists one                                                                                                                      |
 | `-javaagent`, `-Djava.library.path`, `System.loadLibrary`                                      | Native or agent code. See §2                                                                                                                                                         |
-| Target Java version (`JAVA_HOME`, class-file major 52 = 8, 55 = 11, 61 = 17, 65 = 21, 69 = 25) | Version init option. It must be one the docs Overview supports                                                                                                                       |
-| Working directory and relative paths                                                           | Resolve in writable browser storage, not next to the JAR (Filesystem guide)                                                                                                          |
-| `.jnlp`                                                                                        | `<jar href>` (relative to `codebase`) → classpath · `main-class` + `<argument>` → run-main · `<property>` → system properties · `applet-desc` → applet tag · `<nativelib>` → blocker |
+| Target Java version (`JAVA_HOME`, class-file major 52 = 8, 55 = 11, 61 = 17, 65 = 21, 69 = 25) | `cheerpjInit({ version: N })`, where N is the major version (8, 11, 17…) and must be one the docs Overview lists as supported. Without it, CheerpJ runs Java 8                      |
+| Working directory and relative paths                                                           | Write under `/files/`, which is writable and persists in the browser. Do not write next to the JAR: `/app/` is read-only. See the Filesystem guide                                  |
+| `.jnlp`                                                                                        | `<jar href>` (relative to `codebase`) → classpath · `main-class` + `<argument>` → `cheerpjRunMain` · `<property>` → `javaProperties` · `applet-desc` → applet tag · `<nativelib>` → blocker |
 | `<applet code=… archive=…>`                                                                    | §3                                                                                                                                                                                   |
 | JavaScript needs to call Java                                                                  | §4                                                                                                                                                                                   |
 | Oracle Forms (`frmservlet`, `formsweb.cfg`, `frmall.jar`) or EBS                               | §5                                                                                                                                                                                   |
@@ -52,18 +55,32 @@ Reference.
 ## 2. What the browser changes
 
 - **Files.** Java sees a virtual filesystem, never URLs or the local disk.
-  - Server files appear under a read-only mount.
-  - Writable storage is persistent in the browser.
-  - Uploads and downloads have dedicated folders, and JS can inject files.
-  - A wrong path is the most common first error. Read the Filesystem guide before
-    writing any path.
+  - Files hosted over HTTP in the current origin appear under a read-only mount:
+    `/app`. `/app/lib/x.jar` is `https://<your-origin>/lib/x.jar`.
+  - `/files` is writable and persistent. It is stored in the browser's IndexedDB
+    for this origin, so it is per-browser and per-site, and clearing site data
+    erases it.
+  - **Uploads:** the upload icon in a Java window's title bar puts the chosen
+    files in `/files/uploads/`. Files dragged onto a Java window land in `/str/`.
+  - **Downloads:** anything Java writes to `/files/downloads/` is downloaded to
+    the user's device.
+  - **From JavaScript:** `cheerpOSAddStringFile("/str/name", data)` adds a file.
+    `/str/` lives in memory, Java can only read it, and it is gone after a
+    reload.
+  - The most common first error is a wrong path for JARs hosted under `/app`: the
+    `/app` prefix is missing, or a URL is used instead of a virtual path. Read the
+    Filesystem guide before writing any path.
 - **Serving.**
-  - Serve over HTTP(S), never `file://`, from a server with Range support.
-    Python's `http.server` has none; the server-setup guide names some that work.
+  - Serve over HTTP(S), never `file://`. The server must support HTTP Range
+    headers. Python's `http.server` has none; the server-setup guide names some that work.
   - Send caching headers, or JARs download on every visit.
-  - 404s for runtime files at startup are normal.
-  - Stuck at the "runtime ready" message? Check for `file://`, a non-virtual path,
-    or a JAR returning 404.
+  - CheerpJ treats an HTTP 404 as "file not found", which is not a fatal error.
+    The CheerpJ CDN answers 204 instead, so the console stays clean. A
+    self-hosted runtime may log 404s at startup, and they are harmless.
+  - Stuck at the "runtime ready" message? Open DevTools and check the Console for
+    errors and the Network tab for failed requests, such as the app JAR returning
+    404 or a response without Range support. Then check for `file://` or a
+    non-virtual path.
 - **Network.** Same-origin HTTP works. Cross-origin needs CORS on the target.
   Raw sockets need the setup in the Networking guide; ask the user first.
 - **OS touch points.**
@@ -72,12 +89,18 @@ Reference.
     (Reference).
   - The PC's host name and IP are invisible. A value can be supplied through an
     init option.
-  - The clipboard needs HTTPS.
-  - Browser shortcuts win unless overridden with the keyboard init option. Some
-    can never be overridden.
+  - **Clipboard:** by default (`clipboardMode: "java"`) copy and paste work only
+    inside Java. `clipboardMode: "permission"` connects to the system clipboard,
+    which is what most apps want. It needs HTTPS and the user must allow the
+    permission prompt. It is not available on Firefox, Safari or iOS; use
+    `clipboardMode: "system"` there.
+  - **Shortcuts:** the browser handles shortcuts such as Ctrl+F or Ctrl+P first.
+    To give one to Java, pass `overrideShortcuts: (e) => …` to `cheerpjInit`. It
+    receives the `KeyboardEvent` and returns `true` to stop the browser handling
+    it. Some shortcuts, such as Ctrl+W, Ctrl+T and Ctrl+N in Chrome, can never be
+    overridden.
 - **Blockers.** Pre-built native binaries (`.dll`, `.so`, `.dylib`, also inside
-  JARs), OLE/COM automation, and UI toolkits the compatibility page lists as
-  unsupported. Report them with file names. Native code with C/C++ source can
+  JARs), OLE/COM automation, and JavaFX and SWT, which are not supported. Report them with file names. Native code with C/C++ source can
   sometimes be compiled to WebAssembly; that is a job for Leaning Technologies.
 - **Performance.** First load downloads the runtime and JARs, so measure the
   second launch. Open DevTools slow the runtime a lot. The startup-time guide
@@ -102,8 +125,13 @@ Reference.
   - **IE-only DOM** (`document.frames["x"]`, `.applets[].object`): shim it.
   - **`CookieHandler.getDefault()` returns null:** Java SE installs none; the old
     plug-in did. Register one that reads the browser cookies.
-  - **`cache_archive` attributes:** they do nothing.
-  - **Mobile user agents:** some sites serve a non-applet page to them.
+  - **`cache_archive`:** its JARs are loaded like `archive`, but the plug-in's
+    own JAR cache is gone. Caching comes from the browser's HTTP cache, so send
+    caching headers.
+  - **User-agent checks:** some sites serve a different page to IE mode than to
+    Chrome or Edge, or a page with no applet to mobile browsers. Compare what the
+    server sends in each. The Applet Runner can send a different user agent, set
+    by IT through its managed `userAgent` policy (`uaString`, `platform`).
   - **Web Start services:** only some are implemented.
   - **Native DLLs:** a blocker.
 - **Licence validation fails behind corporate web filters:** use offline tokens.
@@ -115,9 +143,6 @@ native methods/libraries guides. Rules:
 
 - Await every step across the boundary: class lookup, construction, calls.
 - Initialise once per page and create the library object once.
-- Objects belong to the context that made them. Inside a native method, use the
-  library object the native receives. Build Java objects (for example events) in
-  Java, not JS.
 - Native method names must match the Java declaration exactly (mangling rule in
   the docs).
 - Pass bulk data as typed arrays or files, not many small calls.
@@ -175,8 +200,7 @@ own staff is **running**.
   - printing and reports, file upload/download, WebUtil;
   - multiple windows, a second session, closing the tab and relaunching, timeout;
   - EBS: View Output/Log (allow pop-ups).
-- Judge layout with a licence applied (the evaluation notice shifts it), and speed
-  on a second launch with DevTools closed.
+- Judge speed on a second launch with DevTools closed.
 - Roll out by group policy with offline tokens, or use the server route for other
   browsers.
 
@@ -216,14 +240,21 @@ own staff is **running**.
 - **PC name or IP in PL/SQL:** on the server route, use the host-name option. With
   the extension it needs Leaning Technologies.
 - **Sessions:**
-  - Tabs share one session cookie, so a second session fails. Use the "always
-    launch a new Forms session" setting or WebLogic cookie settings.
-  - Closing the tab without exiting leaves a cookie that breaks the next launch.
-  - Switching user needing a browser restart is normal browser behaviour.
+  - A second launch, from another tab or after closing the tab without exiting
+    Forms, fails with `FRM-92101: There was a failure in the Forms Server during
+    startup`. The Java trace shows `Connection from new browser window not
+    supported` or `HTTPNStream.getInfoFromServlet`. The cause is the
+    Forms/WebLogic session cookie (`HttpOnly`), which tabs share and which
+    outlives the tab. With the DBA, try the EBS "Always Launch New Forms Session"
+    preference or the WebLogic session-cookie settings in `weblogic.xml`. If the
+    estate cannot change them, Leaning Technologies can provide an extension
+    build that clears the session cookie at launch.
+  - Switching user may need all browser windows closed, as login cookies last
+    until the browser quits.
 - **Signed JARs:** keep the originals. Re-signing has caused `SecurityException`;
   check with `jarsigner -verify`.
-- **Truncated or blurry text:** update the extension or runtime. On high-DPI
-  Windows, Chrome's "Override high DPI scaling behaviour" is a workaround.
+- **Truncated text:** usually display or browser scaling above 100%. Set
+  `disableScaling: true`, or turn it on in the extension's Advanced settings.
 - **Forms 14c:** uses a newer Java client. Say if the docs don't confirm it.
 - **Certification:** never claim Oracle certification. Oracle certifies its own
   JRE.
@@ -268,13 +299,12 @@ Change nothing. Report:
 | Class or file not found                      | Path not virtual, or classpath incomplete or wildcarded |
 | Unsupported class version                    | Wrong version init option                               |
 | Range-header error                           | Server lacks Range support                              |
-| POST hangs                                   | Chunked response with keep-alive; send `Content-Length` |
+| Decompressing an HTTP response fails         | The browser already decoded it (`Content-Encoding: gzip`/`deflate`) and the app inflates it again. Drop the header on the server, or skip inflating in the app |
 | Java, IE or nothing opens instead of CheerpJ | IE mode, local Java or another extension                |
 | Extension stopped working after a change     | Launch switched between applet and Web Start            |
 | Licence won't validate                       | Web filter; use offline tokens                          |
 | "Socket error" popup but the app works       | Non-fatal notice                                        |
-| Layout shifted                               | Evaluation notice; apply a licence                      |
-| Text cut off                                 | Old build; update                                       |
+| Text cut off                                 | Display or browser scaling above 100%, especially with Java 8. Set `disableScaling: true` in `cheerpjInit`, or in the extension's Advanced settings |
 
 Issues: https://github.com/leaningtech/cheerpj-meta/issues · community: Discord
 (linked from the docs).
