@@ -35,19 +35,19 @@ usually launch with many JARs on a classpath and an explicit main class, not wit
 `-jar`. Map each part to its CheerpJ equivalent; exact names are in the
 Reference.
 
-| Today | In CheerpJ |
-|---|---|
-| `java -jar app.jar args` | Run-JAR call with the JAR's virtual path and the same args |
-| `java -cp a.jar;lib/* com.x.Main args` | Run-main call: class name, classpath of virtual paths joined with `:` (expand every wildcard into explicit JARs), args |
-| `-Dkey=value` | System-properties init option |
-| `-Xmx`, `-Xms`, `-XX:…`, `-server` | Usually no equivalent. Drop them unless the Reference lists one |
-| `-javaagent`, `-Djava.library.path`, `System.loadLibrary` | Native or agent code. See §2 |
-| Target Java version (`JAVA_HOME`, class-file major 52 = 8, 55 = 11, 61 = 17, 65 = 21, 69 = 25) | Version init option. It must be one the docs Overview supports |
-| Working directory and relative paths | Resolve in writable browser storage, not next to the JAR (Filesystem guide) |
-| `.jnlp` | `<jar href>` (relative to `codebase`) → classpath · `main-class` + `<argument>` → run-main · `<property>` → system properties · `applet-desc` → applet tag · `<nativelib>` → blocker |
-| `<applet code=… archive=…>` | §3 |
-| JavaScript needs to call Java | §4 |
-| Oracle Forms (`frmservlet`, `formsweb.cfg`, `frmall.jar`) or EBS | §5 |
+| Today                                                                                          | In CheerpJ                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `java -jar app.jar args`                                                                       | Run-JAR call with the JAR's virtual path and the same args                                                                                                                           |
+| `java -cp a.jar;lib/* com.x.Main args`                                                         | Run-main call: class name, classpath of virtual paths joined with `:` (expand every wildcard into explicit JARs), args                                                               |
+| `-Dkey=value`                                                                                  | System-properties init option                                                                                                                                                        |
+| `-Xmx`, `-Xms`, `-XX:…`, `-server`                                                             | Usually no equivalent. Drop them unless the Reference lists one                                                                                                                      |
+| `-javaagent`, `-Djava.library.path`, `System.loadLibrary`                                      | Native or agent code. See §2                                                                                                                                                         |
+| Target Java version (`JAVA_HOME`, class-file major 52 = 8, 55 = 11, 61 = 17, 65 = 21, 69 = 25) | Version init option. It must be one the docs Overview supports                                                                                                                       |
+| Working directory and relative paths                                                           | Resolve in writable browser storage, not next to the JAR (Filesystem guide)                                                                                                          |
+| `.jnlp`                                                                                        | `<jar href>` (relative to `codebase`) → classpath · `main-class` + `<argument>` → run-main · `<property>` → system properties · `applet-desc` → applet tag · `<nativelib>` → blocker |
+| `<applet code=… archive=…>`                                                                    | §3                                                                                                                                                                                   |
+| JavaScript needs to call Java                                                                  | §4                                                                                                                                                                                   |
+| Oracle Forms (`frmservlet`, `formsweb.cfg`, `frmall.jar`) or EBS                               | §5                                                                                                                                                                                   |
 
 ## 2. What the browser changes
 
@@ -112,6 +112,7 @@ Reference.
 
 Copy the syntax from Getting started: library, the Library mode guide and the
 native methods/libraries guides. Rules:
+
 - Await every step across the boundary: class lookup, construction, calls.
 - Initialise once per page and create the library object once.
 - Objects belong to the context that made them. Inside a native method, use the
@@ -152,10 +153,10 @@ own staff is **running**.
 
 ### Check the Oracle side first (most failed first tests)
 
-1. **`connectMode=socket`.** It fails with `FRM-92060 ... Bad machine
-   specification`. Fix: `connectMode=http`/`https` with `serverURL` pointing at the
-   listener servlet (usually `/forms/lservlet`). A listener 404 is a Forms-side
-   mapping problem.
+1. **`connectMode=socket`.** It fails with
+   `FRM-92060 ... Bad machine specification`. Fix: `connectMode=http`/`https`
+   with `serverURL` pointing at the listener servlet (usually `/forms/lservlet`).
+   A listener 404 is a Forms-side mapping problem.
 2. **gzip on `/forms/frmservlet` or `/forms/lservlet`.** The client fails even with
    HTTP 200, and the native plug-in never asked for gzip. Exclude `/forms/*` from
    compression at the proxy or load balancer.
@@ -207,7 +208,7 @@ own staff is **running**.
   - Never pass a virtual path as the client file name. That gives `WUT-131` and
     `WEBUTIL_FILE_TRANSFER` errors. Use `test.txt` or `C:\Temp\test.txt`.
   - Uploads arrive in the upload folder, which is a source only. In the file
-    dialog, pick "All Files (*.*)".
+    dialog, pick `All Files (*.*)`.
   - Downloads must be saved where the Filesystem guide says they are delivered.
   - Test non-ASCII names.
 - **`CLIENT_HOST`:** intercept it or move it server-side. OLE, COM, DDE and client
@@ -230,6 +231,7 @@ own staff is **running**.
 ## 6. Assessing an application ("will it work?", "what will it cost?")
 
 Change nothing. Report:
+
 - **Verdict:** runs / runs with work / blocked.
 - **Findings:** item · evidence (file path) · verdict · docs page · fix. Judge
   against the current compatibility page, not memory.
@@ -261,18 +263,18 @@ Change nothing. Report:
    error text and the steps to reproduce.
 4. Check this table before blaming CheerpJ:
 
-| Symptom | Likely cause |
-|---|---|
-| Class or file not found | Path not virtual, or classpath incomplete or wildcarded |
-| Unsupported class version | Wrong version init option |
-| Range-header error | Server lacks Range support |
-| POST hangs | Chunked response with keep-alive; send `Content-Length` |
-| Java, IE or nothing opens instead of CheerpJ | IE mode, local Java or another extension |
-| Extension stopped working after a change | Launch switched between applet and Web Start |
-| Licence won't validate | Web filter; use offline tokens |
-| "Socket error" popup but the app works | Non-fatal notice |
-| Layout shifted | Evaluation notice; apply a licence |
-| Text cut off | Old build; update |
+| Symptom                                      | Likely cause                                            |
+| -------------------------------------------- | ------------------------------------------------------- |
+| Class or file not found                      | Path not virtual, or classpath incomplete or wildcarded |
+| Unsupported class version                    | Wrong version init option                               |
+| Range-header error                           | Server lacks Range support                              |
+| POST hangs                                   | Chunked response with keep-alive; send `Content-Length` |
+| Java, IE or nothing opens instead of CheerpJ | IE mode, local Java or another extension                |
+| Extension stopped working after a change     | Launch switched between applet and Web Start            |
+| Licence won't validate                       | Web filter; use offline tokens                          |
+| "Socket error" popup but the app works       | Non-fatal notice                                        |
+| Layout shifted                               | Evaluation notice; apply a licence                      |
+| Text cut off                                 | Old build; update                                       |
 
 Issues: https://github.com/leaningtech/cheerpj-meta/issues · community: Discord
 (linked from the docs).
