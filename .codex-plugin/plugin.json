@@ -16,6 +16,9 @@
     "webassembly",
     "applets",
     "jnlp",
-    "oracle-forms"
+    "java-web-start",
+    "oracle-forms",
+    "oracle-ebs",
+    "openjdk"
   ]
 }
