@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "cheerpj",
+  "version": "0.1.0",
+  "description": "Run Java applications, applets, Java Web Start, Oracle Forms/EBS and libraries in the browser with CheerpJ",
+  "author": {
+    "name": "Leaning Technologies",
+    "url": "https://leaningtech.com"
+  },
+  "homepage": "https://cheerpj.com",
+  "repository": "https://github.com/leaningtech/skills",
+  "license": "MIT",
+  "keywords": [
+    "cheerpj",
+    "java",
+    "webassembly",
+    "applets",
+    "jnlp",
+    "java-web-start",
+    "oracle-forms",
+    "oracle-ebs",
+    "openjdk"
+  ]
+}
