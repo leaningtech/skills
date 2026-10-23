@@ -38,19 +38,19 @@ usually launch with many JARs on a classpath and an explicit main class, not wit
 `-jar`. Map each part to its CheerpJ equivalent; exact names are in the
 Reference.
 
-| Today                                                                                          | In CheerpJ                                                                                                                                                                           |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `java -jar app.jar args`                                                                       | `cheerpjRunJar("/app/app.jar", ...args)`                                                                                                                                             |
-| `java -cp a.jar;lib/* com.x.Main args`                                                         | `cheerpjRunMain("com.x.Main", "/app/a.jar:/app/lib/b.jar", ...args)`. Join classpath entries with `:` and expand every wildcard into explicit JARs                                  |
-| `-Dkey=value`                                                                                  | `cheerpjInit({ javaProperties: ["key=value", …] })`                                                                                                                                  |
-| `-Xmx`, `-Xms`, `-XX:…`, `-server`                                                             | Usually no equivalent. Drop them unless the Reference lists one                                                                                                                      |
-| `-javaagent`, `-Djava.library.path`, `System.loadLibrary`                                      | Native or agent code. See §2                                                                                                                                                         |
-| Target Java version (`JAVA_HOME`, class-file major 52 = 8, 55 = 11, 61 = 17, 65 = 21, 69 = 25) | `cheerpjInit({ version: N })`, where N is the major version (8, 11, 17…) and must be one the docs Overview lists as supported. Without it, CheerpJ runs Java 8                      |
-| Working directory and relative paths                                                           | Write under `/files/`, which is writable and persists in the browser. Do not write next to the JAR: `/app/` is read-only. See the Filesystem guide                                  |
+| Today                                                                                          | In CheerpJ                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `java -jar app.jar args`                                                                       | `cheerpjRunJar("/app/app.jar", ...args)`                                                                                                                                                    |
+| `java -cp a.jar;lib/* com.x.Main args`                                                         | `cheerpjRunMain("com.x.Main", "/app/a.jar:/app/lib/b.jar", ...args)`. Join classpath entries with `:` and expand every wildcard into explicit JARs                                          |
+| `-Dkey=value`                                                                                  | `cheerpjInit({ javaProperties: ["key=value", …] })`                                                                                                                                         |
+| `-Xmx`, `-Xms`, `-XX:…`, `-server`                                                             | Usually no equivalent. Drop them unless the Reference lists one                                                                                                                             |
+| `-javaagent`, `-Djava.library.path`, `System.loadLibrary`                                      | Native or agent code. See §2                                                                                                                                                                |
+| Target Java version (`JAVA_HOME`, class-file major 52 = 8, 55 = 11, 61 = 17, 65 = 21, 69 = 25) | `cheerpjInit({ version: N })`, where N is the major version (8, 11, 17…) and must be one the docs Overview lists as supported. Without it, CheerpJ runs Java 8                              |
+| Working directory and relative paths                                                           | Write under `/files/`, which is writable and persists in the browser. Do not write next to the JAR: `/app/` is read-only. See the Filesystem guide                                          |
 | `.jnlp`                                                                                        | `<jar href>` (relative to `codebase`) → classpath · `main-class` + `<argument>` → `cheerpjRunMain` · `<property>` → `javaProperties` · `applet-desc` → applet tag · `<nativelib>` → blocker |
-| `<applet code=… archive=…>`                                                                    | §3                                                                                                                                                                                   |
-| JavaScript needs to call Java                                                                  | §4                                                                                                                                                                                   |
-| Oracle Forms (`frmservlet`, `formsweb.cfg`, `frmall.jar`) or EBS                               | §5                                                                                                                                                                                   |
+| `<applet code=… archive=…>`                                                                    | §3                                                                                                                                                                                          |
+| JavaScript needs to call Java                                                                  | §4                                                                                                                                                                                          |
+| Oracle Forms (`frmservlet`, `formsweb.cfg`, `frmall.jar`) or EBS                               | §5                                                                                                                                                                                          |
 
 ## 2. What the browser changes
 
@@ -61,7 +61,7 @@ Reference.
     for this origin, so it is per-browser and per-site, and clearing site data
     erases it.
   - **Uploads:** the upload icon in a Java window's title bar puts the chosen
-    files in `/files/uploads/`. Files dragged onto a Java window land in `/str/`.
+    files in `/files/uploads/`.
   - **Downloads:** anything Java writes to `/files/downloads/` is downloaded to
     the user's device.
   - **From JavaScript:** `cheerpOSAddStringFile("/str/name", data)` adds a file.
@@ -71,6 +71,9 @@ Reference.
     `/app` prefix is missing, or a URL is used instead of a virtual path. Read the
     Filesystem guide before writing any path.
 - **Serving.**
+  - For a quick demo, a static page that loads CheerpJ from the CDN is
+    enough, including an AI-generated artifact or preview page. No build step,
+    licence key or special headers (such as COOP/COEP) are needed.
   - Serve over HTTP(S), never `file://`. The server must support HTTP Range
     headers. Python's `http.server` has none; the server-setup guide names some that work.
   - Send caching headers, or JARs download on every visit.
@@ -125,9 +128,6 @@ Reference.
   - **IE-only DOM** (`document.frames["x"]`, `.applets[].object`): shim it.
   - **`CookieHandler.getDefault()` returns null:** Java SE installs none; the old
     plug-in did. Register one that reads the browser cookies.
-  - **`cache_archive`:** its JARs are loaded like `archive`, but the plug-in's
-    own JAR cache is gone. Caching comes from the browser's HTTP cache, so send
-    caching headers.
   - **User-agent checks:** some sites serve a different page to IE mode than to
     Chrome or Edge, or a page with no applet to mobile browsers. Compare what the
     server sends in each. The Applet Runner can send a different user agent, set
@@ -241,9 +241,10 @@ own staff is **running**.
   the extension it needs Leaning Technologies.
 - **Sessions:**
   - A second launch, from another tab or after closing the tab without exiting
-    Forms, fails with `FRM-92101: There was a failure in the Forms Server during
-    startup`. The Java trace shows `Connection from new browser window not
-    supported` or `HTTPNStream.getInfoFromServlet`. The cause is the
+    Forms, fails with
+    `FRM-92101: There was a failure in the Forms Server during startup`. The
+    Java trace shows `Connection from new browser window not supported` or
+    `HTTPNStream.getInfoFromServlet`. The cause is the
     Forms/WebLogic session cookie (`HttpOnly`), which tabs share and which
     outlives the tab. With the DBA, try the EBS "Always Launch New Forms Session"
     preference or the WebLogic session-cookie settings in `weblogic.xml`. If the
@@ -294,17 +295,17 @@ Change nothing. Report:
    error text and the steps to reproduce.
 4. Check this table before blaming CheerpJ:
 
-| Symptom                                      | Likely cause                                            |
-| -------------------------------------------- | ------------------------------------------------------- |
-| Class or file not found                      | Path not virtual, or classpath incomplete or wildcarded |
-| Unsupported class version                    | Wrong version init option                               |
-| Range-header error                           | Server lacks Range support                              |
+| Symptom                                      | Likely cause                                                                                                                                                   |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Class or file not found                      | Path not virtual, or classpath incomplete or wildcarded                                                                                                        |
+| Unsupported class version                    | Wrong version init option                                                                                                                                      |
+| Range-header error                           | Server lacks Range support                                                                                                                                     |
 | Decompressing an HTTP response fails         | The browser already decoded it (`Content-Encoding: gzip`/`deflate`) and the app inflates it again. Drop the header on the server, or skip inflating in the app |
-| Java, IE or nothing opens instead of CheerpJ | IE mode, local Java or another extension                |
-| Extension stopped working after a change     | Launch switched between applet and Web Start            |
-| Licence won't validate                       | Web filter; use offline tokens                          |
-| "Socket error" popup but the app works       | Non-fatal notice                                        |
-| Text cut off                                 | Display or browser scaling above 100%, especially with Java 8. Set `disableScaling: true` in `cheerpjInit`, or in the extension's Advanced settings |
+| Java, IE or nothing opens instead of CheerpJ | IE mode, local Java or another extension                                                                                                                       |
+| Extension stopped working after a change     | Launch switched between applet and Web Start                                                                                                                   |
+| Licence won't validate                       | Web filter; use offline tokens                                                                                                                                 |
+| "Socket error" popup but the app works       | Non-fatal notice                                                                                                                                               |
+| Text cut off                                 | Display or browser scaling above 100%, especially with Java 8. Set `disableScaling: true` in `cheerpjInit`, or in the extension's Advanced settings            |
 
 Issues: https://github.com/leaningtech/cheerpj-meta/issues · community: Discord
 (linked from the docs).
