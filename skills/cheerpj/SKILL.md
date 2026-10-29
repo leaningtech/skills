@@ -13,7 +13,7 @@ LTS release; check the docs Overview for the exact versions in each release.
 
 ## Ground rules
 
-- **The docs hold the facts:** https://cheerpj.com/docs/. This skill names the
+- **The docs hold the facts:** https://cheerpj.com/docs/index.html. This skill names the
   core calls (`cheerpjInit`, `cheerpjRunJar`, `cheerpjRunMain`,
   `cheerpjRunLibrary`), the main init options and the filesystem mounts. For
   supported Java versions, the loader script tag, browser support and limits,
@@ -283,7 +283,7 @@ Change nothing. Report:
   own.
 - Serving the runtime from anywhere but the CheerpJ CDN, including copying it into
   a repo or package, is self-hosting and needs a licence that allows it.
-- Names, tiers and prices: https://cheerpj.com/pricing. State in one line which
+- Names, tiers and prices: https://cheerpj.com/licensing/. State in one line which
   licence you think applies and why.
 
 ## 8. When something fails
