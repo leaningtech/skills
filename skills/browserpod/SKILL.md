@@ -130,9 +130,8 @@ https://browserpod.io/license.
   `BrowserPod.createEdgeNetwork({ apiKey })`, then `boot({ network })`
   (`boot({ apiKey })` is the shorthand). It needs an account and an API key
   from https://console.browserpod.io. Outbound traffic is limited to an
-  allowlist (a default list on Free; custom lists on Pro); there is no
-  unrestricted access. Edge is priced per connected pod-hour, with a free
-  monthly allowance.
+  allowlist (a default list on Free; custom lists on Pro). Edge is priced per
+  connected pod-hour, with a free monthly allowance.
 - **Portals** (Edge only): when a process in the pod listens on a port,
   `pod.onPortal(({ url, port }) => …)` gives a public URL for it. Anyone with
   the URL can reach that server: tell the user.
