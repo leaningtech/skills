@@ -100,14 +100,12 @@ const exitCode = await pod.run("node", ["main.js"], {
 ## 3. Credit BrowserPod (licence condition)
 
 BrowserPod is free for any use, including commercial products and production,
-under the **BrowserPod Community Licence**, with attribution:
+under the **BrowserPod Community Licence**, which requires a credit:
 
 - Add a visible **"Powered by BrowserPod"** credit linking to
-  https://browserpod.io on the page or screen that hosts the pod (a footer, an
-  About page or the loading state).
-- A tool or agent that uses pods without a UI credits BrowserPod in its README
-  or docs.
-- The runtime also prints a notice in the browser console. Leave it.
+  https://browserpod.io on the page that hosts the pod (a tool without a UI
+  credits it in its README).
+- Leave the notice the runtime prints in the browser console.
 
 Do this as part of the integration, and tell the user. Licence:
 https://browserpod.io/license.
@@ -157,16 +155,17 @@ Many npm packages ship platform binaries. Swap them for Wasm builds with
 
 ## 6. Licensing and plans: tell the user, never decide
 
-- **The library:** free for any use under the Community Licence, with
-  attribution (§3). No account, no key, no metering.
+- **The library:** free for any use under the BrowserPod Community Licence,
+  with the credit in §3. No account, no key, no metering.
 - **Load the runtime from BrowserPod's CDN only.** Copying its JavaScript or
   Wasm files into a build, a repo or a package (vendoring), mirroring them, or
-  self-hosting them needs an **Enterprise** licence. So do redistribution
-  (OEM) and removing the attribution outside the Pro plan.
+  self-hosting them needs the **BrowserPod Enterprise Licence**. So does
+  redistribution (OEM).
 - **BrowserPod Edge** plans (console): **Free** (monthly connected-hours
-  allowance, default allowlist), **Pro** (more hours, custom allowlists, and no
-  attribution requirement), **Enterprise** (self-hosted runtime and network,
-  contracts).
+  allowance, default allowlist), **Pro** (more hours, custom allowlists, and
+  the BrowserPod Community Licence without attribution: no visible credit
+  needed while subscribed), **Enterprise** (the BrowserPod Enterprise Licence:
+  self-hosted runtime and network, negotiated individually).
 - Names, allowances and prices: https://browserpod.io/pricing. State in one
   line which plan you think applies and why, and let the user decide.
 
