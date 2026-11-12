@@ -4,10 +4,10 @@ Agent skills for [Leaning Technologies](https://leaningtech.com) products. Each
 skill teaches coding agents how to work with one product and links to its docs
 for current facts.
 
-| Skill                                      | Product                                                                                                                   |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| [`cheerpj`](skills/cheerpj/SKILL.md)       | [CheerpJ](https://cheerpj.com): Java applications, applets, Java Web Start, Oracle Forms/EBS and libraries in the browser |
-| [`browserpod`](skills/browserpod/SKILL.md) | [BrowserPod](https://browserpod.io): Linux applications (Node.js, Rust) in a browser tab, with no API key                 |
+| Skill                                      | Product                                                                                                                                                           |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`cheerpj`](skills/cheerpj/SKILL.md)       | [CheerpJ](https://cheerpj.com): Java applications, applets, Java Web Start, Oracle Forms/EBS and libraries in the browser                                         |
+| [`browserpod`](skills/browserpod/SKILL.md) | [BrowserPod](https://browserpod.io): the microVM that runs in the browser. A Linux environment with bash, git, Node.js and Rust in a browser tab (Go coming soon) |
 
 ## Install
 

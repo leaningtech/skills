@@ -16,7 +16,7 @@
     },
     {
       "name": "browserpod",
-      "description": "Run Linux applications in the browser with BrowserPod: Node.js and Rust sandboxes in a web page, with no API key",
+      "description": "BrowserPod, the microVM that runs in the browser: a Linux environment with bash, git, Node.js and Rust in a web page (Go coming soon)",
       "source": "./",
       "strict": false,
       "skills": ["./skills/browserpod"]

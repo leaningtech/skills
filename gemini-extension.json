@@ -1,5 +1,5 @@
 {
   "name": "leaningtech-skills",
   "version": "0.1.0",
-  "description": "Agent skills for Leaning Technologies products: CheerpJ runs Java applications, applets, Java Web Start, Oracle Forms/EBS and libraries in the browser; BrowserPod runs Linux applications (Node.js, Rust) in a browser tab"
+  "description": "Agent skills for Leaning Technologies products: CheerpJ runs Java applications, applets, Java Web Start, Oracle Forms/EBS and libraries in the browser; BrowserPod is the microVM that runs in the browser, a Linux environment with bash, git, Node.js and Rust in a browser tab (Go coming soon)"
 }

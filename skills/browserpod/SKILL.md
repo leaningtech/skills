@@ -1,15 +1,16 @@
 ---
 name: browserpod
-description: Run Linux applications in a browser tab with BrowserPod. Adds an in-browser sandbox to a web app — Node.js 22 and Rust programs, with bash, git and npm, on a WebAssembly kernel — that boots with no API key or account. Covers booting a pod, writing files, running programs in a terminal, networking with and without BrowserPod Edge, Portals, cross-origin isolation, native npm dependencies and the licence's attribution. Use when a user wants code, a dev server, a CLI or an AI agent to run client-side in the browser, asks whether or how BrowserPod fits, hits a BrowserPod error, or asks which BrowserPod licence or plan applies.
+description: BrowserPod, the microVM that runs in the browser. Adds a Linux environment to a web app — bash, git, npm, Node.js 22 and Rust programs on a WebAssembly kernel, in a browser tab — that boots with no API key or account. Go is coming soon. Covers booting a pod, writing files, running programs in a terminal, networking with and without BrowserPod Edge, Portals, cross-origin isolation, native npm dependencies and the licence's attribution. Use when a user wants code, a dev server, a CLI or an AI agent to run client-side in the browser, asks whether or how BrowserPod fits, hits a BrowserPod error, or asks which BrowserPod licence or plan applies.
 ---
 
 # BrowserPod
 
-BrowserPod runs Linux applications in a browser tab. Programs such as `node`,
-`bash`, `git` and Rust binaries are compiled from unmodified source to
-WebAssembly and run as processes on a Linux-like kernel, client-side. A whole
-toolchain works in a pod: `npm install && npm run dev`, `git clone`, CLIs.
-Nothing runs on a server, and the user's files stay on their device.
+BrowserPod is the microVM that runs in the browser: a Linux environment in a
+browser tab. Programs such as `node`, `bash`, `git` and Rust binaries are
+compiled from unmodified source to WebAssembly and run as processes on a
+Linux-like kernel, client-side. A whole toolchain works in a pod:
+`npm install && npm run dev`, `git clone`, CLIs. Nothing runs on a server, and
+the user's files stay on their device.
 
 The package is `@leaningtech/browserpod` on npm. It loads the runtime from
 BrowserPod's CDN. A pod boots with no API key and no account.
@@ -32,19 +33,20 @@ BrowserPod's CDN. A pod boots with no API key and no account.
 
 ## 1. What runs, and what doesn't
 
-| Runtime                                                         | Notes                                                                                                     |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Node.js 22 (the only version)                                   | The real Node binary; JavaScript runs on the browser's engine. npm, npx and pnpm work; Yarn is unreliable |
-| Rust programs                                                   | Unmodified CLIs. A Rust toolchain can be installed in a pod (docs guide)                                  |
-| bash, git, curl, ripgrep and common command-line tools          | In the base image                                                                                         |
-| Python                                                          | **Preview only**: no native extension modules. Don't promise real Python apps                             |
-| Go, Ruby, Rails, Java                                           | Not available in BrowserPod. (Java in the browser is CheerpJ, a separate product)                         |
-| Prebuilt native binaries (`.node` addons, platform executables) | Don't run. Swap for Wasm builds (§5)                                                                      |
+| Runtime                                                         | Notes                                                                                       |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Node.js 22 (the only version)                                   | The real Node binary; JavaScript runs on the browser's engine. npm, npx, pnpm and Yarn work |
+| Rust programs                                                   | Unmodified CLIs. A Rust toolchain can be installed in a pod (docs guide)                    |
+| bash, git, curl, ripgrep and common command-line tools          | In the base image                                                                           |
+| Python                                                          | **Preview only**: no native extension modules. Don't promise real Python apps               |
+| Go                                                              | Coming soon. Not available yet: check the docs for the current status                       |
+| Ruby, Rails, Java                                               | Not available in BrowserPod. (Java in the browser is CheerpJ, a separate product)           |
+| Prebuilt native binaries (`.node` addons, platform executables) | Don't run. Swap for Wasm builds (§5)                                                        |
 
-- **Browsers:** Chromium-based browsers are the reliable target. Firefox and
-  Safari have limitations; heavy workloads may fail on mobile.
-- **Memory:** about 1 GB per pod in practice. A very large repository or build
-  can run out.
+- **Browsers:** Chromium-based browsers give the best results. Firefox and
+  Safari work with some limitations, and mobile devices suit lighter workloads.
+- **Memory:** a pod has roughly 1 GB available, which suits most projects; very
+  large repositories or builds may need trimming.
 
 ## 2. Add BrowserPod to a page
 
@@ -112,24 +114,68 @@ https://browserpod.io/license.
 
 ## 4. Networking: fetch network or Edge
 
-| Need                                                                                     | Use                                                                                                                               |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| No network, or HTTP/HTTPS to servers that allow CORS, `npm install`/`pnpm install`       | **Fetch network** (default, free, no key): `BrowserPod.boot({})`, or `createFetchNetwork({ fetch: BrowserPod.opinionatedFetch })` |
-| Servers without CORS headers                                                             | A fetch network with a custom `fetch` that goes through the user's own proxy (ask them), or Edge                                  |
-| A public URL for a server running in the pod (a dev server preview, a webhook)           | **Edge** (Portals)                                                                                                                |
-| TCP (databases, SSH remotes), or outbound access without CORS limits, under an allowlist | **Edge**                                                                                                                          |
+| Need                                                                                     | Use                                                                                                       |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| No network, or HTTP/HTTPS to servers that allow CORS, `npm install`/`pnpm install`       | **Fetch network** (default, no key): `createFetchNetwork({ fetch: BrowserPod.opinionatedFetch })` (below) |
+| Servers without CORS headers                                                             | A fetch network with a custom `fetch` that goes through the user's own proxy (ask them), or Edge          |
+| A public URL for a server running in the pod (a dev server preview, a webhook)           | **Edge** (Portals)                                                                                        |
+| TCP (databases, SSH remotes), or outbound access without CORS limits, under an allowlist | **Edge**                                                                                                  |
 
-- **Fetch network:** requests go out through the page's own `fetch()`, without
-  cookies, so the browser's CORS rules apply. Outgoing WebSockets work.
-  `opinionatedFetch` adds workarounds for known developer services such as the
-  npm registry. A custom `fetch` passed to `createFetchNetwork` can route
-  requests through the integrator's own reverse proxy.
-- **BrowserPod Edge** is the optional, paid network service:
+### Fetch network (no key)
+
+Requests from the pod (HTTP, HTTPS and WebSocket) go out through the page's
+own `fetch()`, without cookies, so the browser's CORS rules apply: a server
+must send CORS headers allowing the page's origin, or the browser blocks the
+request.
+
+- `BrowserPod.boot({})` (no `apiKey`, no `network`) boots on a fetch network
+  with the **plain** browser `fetch`. That is enough for servers that allow
+  CORS, but **`npm install` won't work**: it needs the workarounds in
+  `opinionatedFetch`. For any app that installs packages, pass it explicitly,
+  as in §2:
+
+  ```js
+  const network = await BrowserPod.createFetchNetwork({
+    fetch: BrowserPod.opinionatedFetch,
+  });
+  const pod = await BrowserPod.boot({ network });
+  ```
+
+- `opinionatedFetch(url, init)` rewrites requests for supported developer
+  services so they work without a proxy (today: the npm registry, so
+  `npm install` works); every other request is passed unchanged to
+  `init.defaultFetch`. More services will be added; the Reference page lists
+  them.
+- **A custom `fetch`** receives `(url, init)`, where `init` is a `RequestInit`
+  plus `defaultFetch` (the browser's `fetch`). Change the request, then hand it
+  on. To route hosts without CORS through the user's own reverse proxy (ask
+  them for it) and keep the npm workarounds, call `opinionatedFetch` last:
+
+  ```js
+  const network = await BrowserPod.createFetchNetwork({
+    fetch(url, init) {
+      if (new URL(url).hostname === "api.example.com") {
+        url = "https://proxy.example.com/" + url; // the user's proxy
+      }
+      return BrowserPod.opinionatedFetch(url, init);
+    },
+  });
+  ```
+
+- **WebSockets** work with no extra setup through the default handler,
+  `opinionatedFetch`, or any custom `fetch` that forwards to
+  `init.defaultFetch` (or `opinionatedFetch`). Only a handler that intercepts
+  the upgrade itself must return a `101` response carrying the socket on a
+  `webSocket` property (see the `createFetchNetwork` Reference).
+- No Portals, and no raw TCP, on a fetch network: those need Edge.
+
+### BrowserPod Edge (hosted)
+
+- **BrowserPod Edge** is the optional, hosted network service:
   `BrowserPod.createEdgeNetwork({ apiKey })`, then `boot({ network })`
   (`boot({ apiKey })` is the shorthand). It needs an account and an API key
-  from https://console.browserpod.io. Outbound traffic is limited to an
-  allowlist (a default list on Free; custom lists on Pro). Edge is priced per
-  connected pod-hour, with a free monthly allowance.
+  from https://console.browserpod.io. Outbound traffic is limited to the
+  key's allowlist.
 - **Portals** (Edge only): when a process in the pod listens on a port,
   `pod.onPortal(({ url, port }) => …)` gives a public URL for it. Anyone with
   the URL can reach that server: tell the user.
