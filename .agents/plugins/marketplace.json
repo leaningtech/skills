@@ -1,6 +1,8 @@
 {
   "name": "leaningtech-skills",
-  "interface": { "displayName": "Leaning Technologies" },
+  "interface": {
+    "displayName": "Leaning Technologies"
+  },
   "plugins": [
     {
       "name": "cheerpj",
@@ -8,7 +10,22 @@
         "source": "url",
         "url": "https://github.com/leaningtech/skills.git"
       },
-      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "browserpod",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/leaningtech/skills.git"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
       "category": "Productivity"
     }
   ]

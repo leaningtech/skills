@@ -13,6 +13,13 @@
       "source": "./",
       "strict": false,
       "skills": ["./skills/cheerpj"]
+    },
+    {
+      "name": "browserpod",
+      "description": "BrowserPod, the microVM that runs in the browser: a Linux environment with bash, git, Node.js and Rust in a web page (Go coming soon)",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/browserpod"]
     }
   ]
 }
