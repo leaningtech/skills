@@ -114,12 +114,23 @@ https://browserpod.io/license.
 
 ## 4. Networking: fetch network or Edge
 
-| Need                                                                                     | Use                                                                                                       |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| No network, or HTTP/HTTPS to servers that allow CORS, `npm install`/`pnpm install`       | **Fetch network** (default, no key): `createFetchNetwork({ fetch: BrowserPod.opinionatedFetch })` (below) |
-| Servers without CORS headers                                                             | A fetch network with a custom `fetch` that goes through the user's own proxy (ask them), or Edge          |
-| A public URL for a server running in the pod (a dev server preview, a webhook)           | **Edge** (Portals)                                                                                        |
-| TCP (databases, SSH remotes), or outbound access without CORS limits, under an allowlist | **Edge**                                                                                                  |
+| Need                                                                                                       | Use                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| No network, or HTTP/HTTPS to servers that allow CORS, `npm install`/`pnpm install`                         | **Fetch network** (default, no key): `createFetchNetwork({ fetch: BrowserPod.opinionatedFetch })` (below) |
+| Servers in the pod that only the pod uses (a dev server and its tests, a local API on `localhost`)         | **Either network**: loopback works without Edge (below)                                                   |
+| Servers without CORS headers                                                                               | A fetch network with a custom `fetch` that goes through the user's own proxy (ask them), or Edge          |
+| A public URL for a server running in the pod (a dev server preview, a webhook)                             | **Edge** (Portals)                                                                                        |
+| Outbound TCP (a remote database, SSH remotes, any port), or access without CORS limits, under an allowlist | **Edge**                                                                                                  |
+
+### Loopback (either network)
+
+- Programs in a pod can listen on a port and reach each other over
+  `localhost` (all of 127.0.0.0/8) on **either network**, with no API key:
+  a dev server and the tests that call it, a local API and its client.
+  Loopback traffic stays in the pod.
+- On a fetch network such a server is reachable **only from inside the pod**:
+  the page and other devices can't open it. To show it outside the pod, use
+  Edge (Portals).
 
 ### Fetch network (no key)
 
@@ -167,7 +178,8 @@ request.
   `init.defaultFetch` (or `opinionatedFetch`). Only a handler that intercepts
   the upgrade itself must return a `101` response carrying the socket on a
   `webSocket` property (see the `createFetchNetwork` Reference).
-- No Portals, and no raw TCP, on a fetch network: those need Edge.
+- No Portals, and no outbound raw TCP, on a fetch network: those need Edge.
+  TCP between programs in the pod works (Loopback, above).
 
 ### BrowserPod Edge (hosted)
 
@@ -175,10 +187,12 @@ request.
   `BrowserPod.createEdgeNetwork({ apiKey })`, then `boot({ network })`
   (`boot({ apiKey })` is the shorthand). It needs an account and an API key
   from https://console.browserpod.io. Outbound traffic is limited to the
-  key's allowlist.
-- **Portals** (Edge only): when a process in the pod listens on a port,
-  `pod.onPortal(({ url, port }) => …)` gives a public URL for it. Anyone with
-  the URL can reach that server: tell the user.
+  key's allowlist: HTTP, HTTPS and WebSocket, and TCP to allowed domains on
+  any port.
+- **Portals** (Edge only): when a process in the pod listens on a TCP port,
+  `pod.onPortal(({ url, port }) => …)` gives a public URL for it. Servers
+  bound to `localhost` get one too, so a dev server needs no `--host`. Anyone
+  with the URL can reach that server: tell the user.
 - **API keys are visible to visitors** of a public page. Protect a key by
   restricting its allowed origins in the console. Read it from configuration
   (e.g. `import.meta.env`), not hard-coded.
@@ -222,22 +236,25 @@ Many npm packages ship platform binaries. Swap them for Wasm builds with
    `package.json`), the network (fetch or Edge) and the exact error.
 3. Check this table, then the docs page "Debugging BrowserPod":
 
-| Symptom                                                     | Likely cause                                                                                                                 |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Pod never boots; `SharedArrayBuffer` missing                | The page isn't cross-origin isolated: COOP/COEP headers missing (§2)                                                         |
-| `&&`, pipes or shell builtins fail in `pod.run`             | `run` starts one program (like `execve`), not a shell. Run commands one by one, or write a script and run it                 |
-| `The 'terminal' argument is required`, or output disappears | No terminal, or its element was removed. Keep the element mounted (hide it with CSS if needed)                               |
-| `Unsupported 'mode' argument`                               | `createFile` / `openFile` take only `"binary"` or `"utf-8"`                                                                  |
-| Images, fonts or scripts from other sites stop loading      | `require-corp` blocks resources without CORP/CORS headers                                                                    |
-| `run()` asks for Chrome / `Atomics.waitAsync` missing       | Unsupported browser: use a Chromium-based browser                                                                            |
-| `npm install` fails on a fetch network                      | Not using `opinionatedFetch`, or a registry or host without CORS                                                             |
-| A request fails with a CORS error                           | Fetch network: the server sends no CORS headers. Use the user's proxy or Edge                                                |
-| No Portal URL                                               | Fetch network (Portals need Edge), or the server listens on no port                                                          |
-| "Cannot create an edge network without an API key"          | `createEdgeNetwork` without `apiKey`                                                                                         |
-| Edge boot fails, or requests to a domain are blocked        | Key's allowed origins don't include the page, the domain isn't on the key's allowlist, or the account's allowance is used up |
-| Error that the disk is open elsewhere                       | Another tab uses the same `storageKey`                                                                                       |
-| `Cannot find module …node` / exec format error              | A native binary: swap for a Wasm build (§5)                                                                                  |
-| Out of memory                                               | Pod memory ceiling (~1 GB): a smaller project or build                                                                       |
+| Symptom                                                         | Likely cause                                                                                                                 |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Pod never boots; `SharedArrayBuffer` missing                    | The page isn't cross-origin isolated: COOP/COEP headers missing (§2)                                                         |
+| `&&`, pipes or shell builtins fail in `pod.run`                 | `run` starts one program (like `execve`), not a shell. Run commands one by one, or write a script and run it                 |
+| `The 'terminal' argument is required`, or output disappears     | No terminal, or its element was removed. Keep the element mounted (hide it with CSS if needed)                               |
+| `Unsupported 'mode' argument`                                   | `createFile` / `openFile` take only `"binary"` or `"utf-8"`                                                                  |
+| Images, fonts or scripts from other sites stop loading          | `require-corp` blocks resources without CORP/CORS headers                                                                    |
+| `run()` asks for Chrome / `Atomics.waitAsync` missing           | Unsupported browser: use a Chromium-based browser                                                                            |
+| `npm install` fails on a fetch network                          | Not using `opinionatedFetch`, or a registry or host without CORS                                                             |
+| A request fails with a CORS error                               | Fetch network: the server sends no CORS headers. Use the user's proxy or Edge                                                |
+| No Portal URL                                                   | Fetch network (Portals need Edge), or the server listens on no port                                                          |
+| Connection refused to `localhost` in the pod                    | The server hasn't started listening yet, or listens on another port. Loopback needs no Edge                                  |
+| Outbound TCP (a database, `git@` SSH) fails                     | Fetch network: outbound TCP needs Edge. On Edge, the domain isn't on the key's allowlist                                     |
+| Edge TCP refused to an allowed host on a port other than 80/443 | The host is behind Cloudflare: Edge reaches Cloudflare's addresses only over HTTP and HTTPS on 80 and 443                    |
+| "Cannot create an edge network without an API key"              | `createEdgeNetwork` without `apiKey`                                                                                         |
+| Edge boot fails, or requests to a domain are blocked            | Key's allowed origins don't include the page, the domain isn't on the key's allowlist, or the account's allowance is used up |
+| Error that the disk is open elsewhere                           | Another tab uses the same `storageKey`                                                                                       |
+| `Cannot find module …node` / exec format error                  | A native binary: swap for a Wasm build (§5)                                                                                  |
+| Out of memory                                                   | Pod memory ceiling (~1 GB): a smaller project or build                                                                       |
 
 Issues: https://github.com/leaningtech/browserpod-meta/issues · community:
 Discord (linked from the docs).
